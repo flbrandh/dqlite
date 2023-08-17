@@ -2,6 +2,23 @@
 
 #include "vfs.h"
 
+struct timespec tcp_request_start;
+struct timespec tcp_response_start;
+double ms_difference(struct timespec* start, struct timespec* end)
+{
+    int64_t start_ns = start->tv_sec * 1000000000 + start->tv_nsec;
+    int64_t end_ns = end->tv_sec * 1000000000 + end->tv_nsec;
+    return 0.001*0.001*(double)(end_ns-start_ns);
+}
+
+double ms_elapsed(struct timespec* start)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return ms_difference(start, &ts);
+}
+
+
 int dqlite_version_number(void)
 {
 	return DQLITE_VERSION_NUMBER;

@@ -79,6 +79,8 @@ int dqlite__init(struct dqlite_node *d,
 		rv = DQLITE_ERROR;
 		goto err_after_raft_transport_init;
 	}
+    //raft_uv_set_snapshot_compression(&d->raft_io, true);
+
 	rv = fsm__init(&d->raft_fsm, &d->config, &d->registry);
 	if (rv != 0) {
 		goto err_after_raft_io_init;
@@ -95,7 +97,8 @@ int dqlite__init(struct dqlite_node *d,
 	/* TODO: expose these values through some API */
 	raft_set_election_timeout(&d->raft, 3000);
 	raft_set_heartbeat_timeout(&d->raft, 500);
-	raft_set_snapshot_threshold(&d->raft, 1024);
+//	raft_set_snapshot_threshold(&d->raft, 1024);
+	raft_set_snapshot_threshold(&d->raft, 32);
 	raft_set_snapshot_trailing(&d->raft, 8192);
 	raft_set_pre_vote(&d->raft, true);
 	raft_set_max_catch_up_rounds(&d->raft, 100);

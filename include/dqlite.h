@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <time.h>
 
 #ifndef DQLITE_API
 #define DQLITE_API __attribute__((visibility("default")))
@@ -31,6 +32,12 @@
 #define DQLITE_VERSION_NUMBER                                            \
 	(DQLITE_VERSION_MAJOR * 100 * 100 + DQLITE_VERSION_MINOR * 100 + \
 	 DQLITE_VERSION_RELEASE)
+
+extern struct timespec tcp_request_start;
+extern struct timespec tcp_response_start;
+
+double ms_difference(struct timespec* start, struct timespec* end);
+double ms_elapsed(struct timespec* start);
 
 DQLITE_API int dqlite_version_number(void);
 

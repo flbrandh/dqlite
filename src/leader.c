@@ -231,6 +231,8 @@ err_after_buf_alloc:
 	raft_free(buf.base);
 }
 
+struct timespec leader_exec_start_time;
+
 static void leaderApplyFramesCb(struct raft_apply *req,
 				int status,
 				void *result)
@@ -286,6 +288,9 @@ finish:
 	l->inflight = NULL;
 	l->db->tx_id = 0;
 	leaderExecDone(l->exec);
+
+	fprintf(stderr,"\033[46;1mapplying dqlite-operation took %f ms to execute\033[0m\n",
+		   ms_elapsed(&leader_exec_start_time));
 }
 
 static int leaderApplyFrames(struct exec *req,
@@ -348,6 +353,7 @@ err:
 
 static void leaderExecV2(struct exec *req)
 {
+    clock_gettime(CLOCK_REALTIME, &leader_exec_start_time);
 	tracef("leader exec v2 id:%" PRIu64, req->id);
 	struct leader *l = req->leader;
 	struct db *db = l->db;

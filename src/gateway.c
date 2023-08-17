@@ -686,6 +686,8 @@ static void handle_exec_sql_cb(struct exec *exec, int status)
 	}
 }
 
+struct timespec sql_exec_start_time;
+
 static void handle_exec_sql_next(struct gateway *g,
 				 struct handle *req,
 				 bool done)
@@ -754,6 +756,8 @@ success:
 	if (req->exec_count > 0) {
 		fill_result(g, &response);
 	}
+    fprintf(stderr,"\033[41;1mexecuting sql-operation took %f ms to execute\033[0m\n",
+           ms_elapsed(&sql_exec_start_time));
 	SUCCESS_V0(result, RESULT);
 done_after_prepare:
 	sqlite3_finalize(stmt);
@@ -779,6 +783,7 @@ static void execSqlBarrierCb(struct barrier *barrier, int status)
 
 static int handle_exec_sql(struct gateway *g, struct handle *req)
 {
+    clock_gettime(CLOCK_REALTIME,&sql_exec_start_time);
 	tracef("handle exec sql schema:%" PRIu8, req->schema);
 	struct cursor *cursor = &req->cursor;
 	struct request_exec_sql request = {0};

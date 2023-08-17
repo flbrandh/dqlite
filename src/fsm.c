@@ -555,10 +555,14 @@ static void freeSnapshotBufs(struct fsm *f,
 	}
 }
 
+struct timespec time_start_snapshot;
+
 static int fsm__snapshot(struct raft_fsm *fsm,
 			 struct raft_buffer *bufs[],
 			 unsigned *n_bufs)
 {
+    clock_gettime(CLOCK_REALTIME, &time_start_snapshot);
+
 	struct fsm *f = fsm->data;
 	queue *head;
 	struct db *db;
@@ -597,6 +601,8 @@ static int fsm__snapshot(struct raft_fsm *fsm,
 		goto err_after_bufs_alloc;
 	}
 
+    struct timespec time_start_encoding;
+    clock_gettime(CLOCK_REALTIME, &time_start_encoding);
 	/* Encode individual databases. */
 	i = 1;
 	QUEUE__FOREACH(head, &f->registry->dbs)
@@ -612,6 +618,11 @@ static int fsm__snapshot(struct raft_fsm *fsm,
 	}
 
 	assert(i == *n_bufs);
+
+    fprintf(stderr,"\033[43;1m%s took %f ms to execute (time to encode: %f ms) \033[0m\n",
+           __PRETTY_FUNCTION__,
+           ms_elapsed(&time_start_snapshot),
+           ms_elapsed(&time_start_encoding));
 	return 0;
 
 err_after_encode_header:
@@ -632,6 +643,8 @@ static int fsm__snapshot_finalize(struct raft_fsm *fsm,
 				  struct raft_buffer *bufs[],
 				  unsigned *n_bufs)
 {
+    struct timespec time_start_finalize;
+    clock_gettime(CLOCK_REALTIME, &time_start_finalize);
 	struct fsm *f = fsm->data;
 	queue *head;
 	struct db *db;
@@ -674,6 +687,12 @@ static int fsm__snapshot_finalize(struct raft_fsm *fsm,
 		assert(rv == 0);
 		n_db++;
 	}
+
+
+    fprintf(stderr,"\033[43;1m%s took %f ms to execute (total snapshot time: %fms)\033[0m\n",
+           __PRETTY_FUNCTION__,
+           ms_elapsed(&time_start_finalize),
+           ms_elapsed(&time_start_snapshot));
 
 	return 0;
 }

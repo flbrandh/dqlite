@@ -5,6 +5,8 @@
 #include "tracing.h"
 #include "transport.h"
 
+struct timespec request_start;
+
 /* Initialize the given buffer for reading, ensure it has the given size. */
 static int init_read(struct conn *c, uv_buf_t *buf, size_t size)
 {
@@ -49,6 +51,7 @@ abort:
 	conn__stop(c);
 }
 
+
 static void gateway_handle_cb(struct handle *req,
 			      int status,
 			      uint8_t type,
@@ -88,11 +91,15 @@ static void gateway_handle_cb(struct handle *req,
 	buf.base = buffer__cursor(&c->write, 0);
 	buf.len = buffer__offset(&c->write);
 
+    clock_gettime(CLOCK_REALTIME, &tcp_response_start);
+    fprintf(stderr,"\033[42;1mdetermining response took %f ms to execute\033[0m\n",
+           ms_elapsed(&request_start));
 	rv = transport__write(&c->transport, &buf, conn_write_cb);
 	if (rv != 0) {
 		tracef("transport write failed %d", rv);
 		goto abort;
 	}
+
 	return;
 abort:
 	conn__stop(c);
@@ -130,6 +137,10 @@ static void raft_connect(struct conn *c)
 
 static void read_request_cb(struct transport *transport, int status)
 {
+    fprintf(stderr, "\033[44;1mtransferring request took %f ms to execute\033[0m\n",
+           ms_elapsed(&tcp_request_start));
+    clock_gettime(CLOCK_REALTIME, &request_start);
+
 	struct conn *c = transport->data;
 	struct cursor *cursor = &c->handle.cursor;
 	int rv;
@@ -211,6 +222,8 @@ static void read_message_cb(struct transport *transport, int status)
 		return;
 	}
 }
+
+
 
 /* Start reading metadata about the next message */
 static int read_message(struct conn *c)
